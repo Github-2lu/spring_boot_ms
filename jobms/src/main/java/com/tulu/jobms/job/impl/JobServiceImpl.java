@@ -3,14 +3,17 @@ package com.tulu.jobms.job.impl;
 import com.tulu.jobms.job.Job;
 import com.tulu.jobms.job.JobRepository;
 import com.tulu.jobms.job.JobService;
-import com.tulu.jobms.job.dto.JobWithCompanyDTO;
+import com.tulu.jobms.job.dto.JobDTO;
 import com.tulu.jobms.job.external.Company;
+import com.tulu.jobms.job.external.Review;
 import com.tulu.jobms.job.mapper.JobMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,20 +33,25 @@ public class JobServiceImpl implements JobService {
         this.jobRepository = jobRepository;
     }
 
-    private JobWithCompanyDTO convertToDTO(Job job){
+    private JobDTO convertToDTO(Job job){
         //RestTemplate restTemplate = new RestTemplate();
 
         // when using eureka server registry we don't have to use server ip address. We can use application name
         // but we can't use simple restTemplate it has to be load balanced
         Company company = restTemplate.getForObject("http://COMPANYMS:8081/companies/" + job.getCompanyId(), Company.class);
 
-        JobWithCompanyDTO jobWithCompanyDTO = JobMapper.mapToJobWithCompanyDTO(job, company);
+        ResponseEntity<List<Review>> reviewResponse = restTemplate.exchange("http://REVIEWMS:8083/reviews?companyId=" + job.getCompanyId(),
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<Review>>() {
+        });
 
-        return jobWithCompanyDTO;
+        List<Review> reviews = reviewResponse.getBody();
 
+        return JobMapper.mapToJobWithCompanyDTO(job, company, reviews);
     }
 
-    public List<JobWithCompanyDTO> findAll() {
+    public List<JobDTO> findAll() {
         // DTO is used to create custom response
         List<Job> jobs = jobRepository.findAll();
         // here rest template is used to communicate between two microservices using rest api calls
@@ -57,7 +65,7 @@ public class JobServiceImpl implements JobService {
         jobRepository.save(job);
     }
 
-    public JobWithCompanyDTO getJobById(Long id){
+    public JobDTO getJobById(Long id){
         Job job =  jobRepository.findById(id).orElse(null);
         return convertToDTO(job);
     }

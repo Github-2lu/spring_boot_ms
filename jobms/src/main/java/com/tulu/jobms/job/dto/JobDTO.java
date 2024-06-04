@@ -1,9 +1,11 @@
 package com.tulu.jobms.job.dto;
 
-import com.tulu.jobms.job.Job;
 import com.tulu.jobms.job.external.Company;
+import com.tulu.jobms.job.external.Review;
 
-public class JobWithCompanyDTO {
+import java.util.List;
+
+public class JobDTO {
     private Long id;
     private String title;
     private String description;
@@ -11,6 +13,7 @@ public class JobWithCompanyDTO {
     private String maxSal;
     private String location;
     private Company company;
+    List<Review> reviews;
 
     public Long getId() {
         return id;
@@ -66,5 +69,13 @@ public class JobWithCompanyDTO {
 
     public void setCompany(Company company) {
         this.company = company;
+    }
+
+    public List<Review> getReviews(){
+        return this.reviews;
+    }
+
+    public void setReviews(List<Review> reviews){
+        this.reviews = reviews;
     }
 }
