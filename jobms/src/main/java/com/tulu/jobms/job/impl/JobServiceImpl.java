@@ -3,6 +3,8 @@ package com.tulu.jobms.job.impl;
 import com.tulu.jobms.job.Job;
 import com.tulu.jobms.job.JobRepository;
 import com.tulu.jobms.job.JobService;
+import com.tulu.jobms.job.clients.CompanyClient;
+import com.tulu.jobms.job.clients.ReviewClient;
 import com.tulu.jobms.job.dto.JobDTO;
 import com.tulu.jobms.job.external.Company;
 import com.tulu.jobms.job.external.Review;
@@ -29,8 +31,13 @@ public class JobServiceImpl implements JobService {
     // auto wired is used to provide resTemplate on runtime. It is possible as we use bean in AppConfig
     RestTemplate restTemplate;
 
-    public JobServiceImpl(JobRepository jobRepository){
+    final private CompanyClient companyClient;
+    final private ReviewClient reviewClient;
+
+    public JobServiceImpl(JobRepository jobRepository, CompanyClient companyClient, ReviewClient reviewClient){
         this.jobRepository = jobRepository;
+        this.companyClient = companyClient;
+        this.reviewClient = reviewClient;
     }
 
     private JobDTO convertToDTO(Job job){
@@ -38,15 +45,9 @@ public class JobServiceImpl implements JobService {
 
         // when using eureka server registry we don't have to use server ip address. We can use application name
         // but we can't use simple restTemplate it has to be load balanced
-        Company company = restTemplate.getForObject("http://COMPANYMS:8081/companies/" + job.getCompanyId(), Company.class);
+        Company company = companyClient.getCompany(job.getCompanyId());
 
-        ResponseEntity<List<Review>> reviewResponse = restTemplate.exchange("http://REVIEWMS:8083/reviews?companyId=" + job.getCompanyId(),
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<List<Review>>() {
-        });
-
-        List<Review> reviews = reviewResponse.getBody();
+        List<Review> reviews = reviewClient.getReviews(job.getCompanyId());
 
         return JobMapper.mapToJobWithCompanyDTO(job, company, reviews);
     }
