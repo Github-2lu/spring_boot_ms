@@ -27,10 +27,6 @@ public class JobServiceImpl implements JobService {
     JobRepository jobRepository;
 //    private Long id=1L;
 
-    @Autowired
-    // auto wired is used to provide resTemplate on runtime. It is possible as we use bean in AppConfig
-    RestTemplate restTemplate;
-
     final private CompanyClient companyClient;
     final private ReviewClient reviewClient;
 
